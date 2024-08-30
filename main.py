@@ -1,8 +1,10 @@
 import os
 import time
 
+adb_path = r"c:/platform-tools/adb.exe"
+
 def adb_command(command):
-    result = os.system(f"adb shell {command}")
+    result = os.system(f'"{adb_path}" shell {command}')
     if result == 0:
         print(f"✅ Command '{command}' executed successfully!")
     else:
@@ -12,29 +14,33 @@ def tap(x, y):
     adb_command(f"input tap {x} {y}")
 
 def input_text(text):
-    result = os.system(f'adb shell input text "{text}"')
+    result = os.system(f'"{adb_path}" shell input text "{text}"')
     if result == 0:
         print(f"✅ Text '{text}' entered successfully!")
     else:
         print(f"❌ Failed to enter text '{text}'.")
 
 def key_event(key):
-    result = os.system(f"adb shell input keyevent {key}")
+    result = os.system(f'"{adb_path}" shell input keyevent {key}')
     if result == 0:
         print(f"✅ Key event '{key}' executed successfully!")
     else:
         print(f"❌ Key event '{key}' failed to execute.")
 
 try:
-    os.system("cd c:/platform-tools")
-    os.system("adb.exe devices")
-    result = os.system("adb connect localhost:5555")
+    result = os.system(f'"{adb_path}" devices')
+    if result == 0:
+        print("✅ ADB devices listed successfully!")
+    else:
+        print("❌ Failed to list ADB devices.")
+
+    result = os.system(f'"{adb_path}" connect localhost:5555')
     if result == 0:
         print("✅ Connected to BlueStacks successfully!")
     else:
         print("❌ Failed to connect to BlueStacks.")
 
-    result = os.system("adb push /path/to/your/tdata /storage/emulated/0/Android/data/org.telegram.messenger/files/")
+    result = os.system(f'"{adb_path}" push /path/to/your/tdata /storage/emulated/0/Android/data/org.telegram.messenger/files/')
     if result == 0:
         print("✅ tdata folder pushed successfully!")
     else:
