@@ -26,6 +26,8 @@ def key_event(key):
         print(f"❌ Key event '{key}' failed to execute.")
 
 try:
+    os.system("cd c:/platform-tools")
+    os.system("adb.exe devices")
     result = os.system("adb connect localhost:5555")
     if result == 0:
         print("✅ Connected to BlueStacks successfully!")
