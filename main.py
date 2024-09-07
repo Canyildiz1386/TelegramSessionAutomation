@@ -1,68 +1,93 @@
+import subprocess
 import os
 import time
 
-adb_path = r"c:/platform-tools/adb.exe"
+adb_path = r'C:\platform-tools\adb.exe'
 
-def adb_command(command):
-    result = os.system(f'"{adb_path}" shell {command}')
-    if result == 0:
-        print(f"✅ Command '{command}' executed successfully!")
+def get_adb_devices():
+    result = subprocess.run([adb_path, 'devices'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    output = result.stdout
+    devices = output.splitlines()[1:]
+    devices = [line for line in devices if line.strip()]
+    return devices
+
+def connect_to_device(ip="127.0.0.1:5555"):
+    result = subprocess.run([adb_path, 'connect', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if 'connected' in result.stdout:
+        print(f"Successfully connected to {ip}")
     else:
-        print(f"❌ Command '{command}' failed to execute.")
+        print(f"Failed to connect to {ip}: {result.stdout}")
 
-def tap(x, y):
-    adb_command(f"input tap {x} {y}")
 
-def input_text(text):
-    result = os.system(f'"{adb_path}" shell input text "{text}"')
-    if result == 0:
-        print(f"✅ Text '{text}' entered successfully!")
-    else:
-        print(f"❌ Failed to enter text '{text}'.")
+def open_cyberghost_on_bluestacks():
+    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'monkey', '-p', 'de.mobileconcepts.cyberghost -c android.intent.category.LAUNCHER 1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if check_for_button('Agree') :
+        click_on_bluestacks(692,1283)
+        time.sleep(20)
+    time.sleep(10)
+    if check_for_button('Existing user?'):
+        click_on_bluestacks(448,1390)
+    
+    if check_for_button('Login'):
+        click_on_bluestacks(396,524)
 
-def key_event(key):
-    result = os.system(f'"{adb_path}" shell input keyevent {key}')
-    if result == 0:
-        print(f"✅ Key event '{key}' executed successfully!")
-    else:
-        print(f"❌ Key event '{key}' failed to execute.")
-
-try:
-    result = os.system(f'"{adb_path}" devices')
-    if result == 0:
-        print("✅ ADB devices listed successfully!")
-    else:
-        print("❌ Failed to list ADB devices.")
-
-    result = os.system(f'"{adb_path}" connect localhost:5555')
-    if result == 0:
-        print("✅ Connected to BlueStacks successfully!")
-    else:
-        print("❌ Failed to connect to BlueStacks.")
-
-    result = os.system(f'"{adb_path}" push /path/to/your/tdata /storage/emulated/0/Android/data/org.telegram.messenger/files/')
-    if result == 0:
-        print("✅ tdata folder pushed successfully!")
-    else:
-        print("❌ Failed to push tdata folder.")
-
-    adb_command("monkey -p org.telegram.messenger -c android.intent.category.LAUNCHER 1")
+        input_text_on_bluestacks(
+            'kelly_yen@hotmail.com'
+        )
+        click_on_bluestacks(337,693)
+        input_text_on_bluestacks(
+            '2Agujjlu!'
+        )
+        click_on_bluestacks(512,842)
     time.sleep(10)
 
-    tap(100, 100)
-    time.sleep(2)
-    tap(200, 400)
-    time.sleep(2)
-    tap(300, 500)
-    time.sleep(2)
-    tap(300, 600)
+    if check_for_button('OK'):
+        click_on_bluestacks(401,1033)
+    return
 
-    new_phone_number = "1234567890"
-    input_text(new_phone_number)
-    key_event(66)
-    time.sleep(2)
-    tap(400, 700)
     
-    print("✅ Phone number change process completed successfully!")
-except Exception as e:
-    print(f"❌ An error occurred: {e}")
+
+    time.sleep(5)
+    click_on_bluestacks(529,1021)
+
+
+def check_for_button(text):
+    ui_content = get_ui_hierarchy()
+    if ui_content and text in ui_content:
+        print(f"Button with text '{text}' found!")
+        return True
+    else:
+        print(f"Button with text '{text}' not found.")
+        return False
+
+def click_on_bluestacks(x, y):
+    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'input', 'tap', str(x), str(y)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+def input_text_on_bluestacks(text):
+    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'input', 'text', text], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+def get_ui_hierarchy():
+    # Dump UI hierarchy to a file
+    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'uiautomator', 'dump', '/sdcard/ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    # Pull the file to the local machine
+    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'pull', '/sdcard/ui.xml', './ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    # Read the contents of the dumped XML file
+    try:
+        with open('ui.xml', 'r', encoding='utf-8') as file:
+            return file.read()
+    except FileNotFoundError:
+        print("UI dump file not found.")
+        return None
+if __name__ == "__main__":
+    devices = get_adb_devices()
+    if devices:
+        for device in devices:
+            print(device)
+    else:
+        print("No devices connected.")
+
+    connect_to_device()
+
+    open_cyberghost_on_bluestacks()
+
