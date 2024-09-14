@@ -1,8 +1,8 @@
 import subprocess
 import time
-import os
-from pydub import AudioSegment
 import speech_recognition as sr
+from datetime import datetime
+import os
 
 adb_path = r'C:\platform-tools\adb.exe'
 
@@ -18,6 +18,7 @@ def get_adb_devices():
     return devices
 
 def connect_to_device(ip="127.0.0.1:5555"):
+
     log(f"Connecting to device {ip}...", "📡")
     result = subprocess.run([adb_path, 'connect', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if 'connected' in result.stdout:
@@ -61,6 +62,7 @@ def open_app_on_bluestacks(package_name, start_label=None):
     log(f"Launching {package_name} on BlueStacks...", "🚀")
     close_app(package_name)
     subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'monkey', '-p', package_name, '-c', 'android.intent.category.LAUNCHER', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
     time.sleep(2)
     if start_label and check_for_label(start_label):
         click_on_bluestacks(398, 463)
@@ -73,6 +75,7 @@ def open_cyberghost_on_bluestacks():
     if check_for_label('Existing'):
         click_on_bluestacks(237, 737)
         log("Clicked 'Existing user?'", "✅")
+    
     if check_for_label('Login'):
         click_on_bluestacks(246, 346)
         log("Clicked 'Login'", "✅")
@@ -83,6 +86,7 @@ def open_cyberghost_on_bluestacks():
         log("Entered password", "🔑")
         click_on_bluestacks(285, 504)
         time.sleep(40)
+
     if check_for_label('OK'):
         click_on_bluestacks(283, 611)
         click_on_bluestacks(426, 593)
@@ -90,6 +94,7 @@ def open_cyberghost_on_bluestacks():
         time.sleep(40)
         click_on_bluestacks(296, 364)
         click_on_bluestacks(433, 591)
+    
     if check_for_label("Connect to"):
         click_on_bluestacks(282, 442)
         log("Clicked 'Connect to'", "✅")
@@ -102,23 +107,28 @@ def open_cyberghost_on_bluestacks():
         log("Connected to France", "🔒")
 
 def open_telegram_on_bluestacks():
-    open_app_on_bluestacks('org.telegram.messenger', 'Start Messaging')
-    time.sleep(3)
-    click_on_bluestacks(638, 317)
-    input_text_on_bluestacks('+14417043455')
-    click_on_bluestacks(898, 483)
-    time.sleep(3)
-    click_on_bluestacks(902, 408)
-    click_on_bluestacks(615, 396)
-    time.sleep(1)
-    click_on_bluestacks(641, 314)
+    open_app_on_bluestacks('org.telegram.messenger')
+    if check_for_label('My Story'):
+        click_on_bluestacks(30,46)
+        time.sleep(1)
+        click_on_bluestacks(176,198)
+        time.sleep(1)
+
+        click_on_bluestacks(166,350)
+        time.sleep(1)
+
+        click_on_bluestacks(71,465)
+        time.sleep(1)
+ 
 
 def open_efon_on_bluestacks():
-    start_audio_recording()
+
     open_app_on_bluestacks('io.efon', 'Start')
     time.sleep(1)
+
+
     input_text_on_bluestacks('+43650110000')
-    click_on_bluestacks(266, 851)
+    click_on_bluestacks(266,851)
     time.sleep(2)
     phone_number = '6505012991'
     number_to_coordinates = {
@@ -134,45 +144,65 @@ def open_efon_on_bluestacks():
         '9': (390, 648),
         '*' : (162,780),
         '#' : (395,783)
+        
     }
     time.sleep(7)
-    click_on_bluestacks(39, 176)
+    click_on_bluestacks(39,176)
     time.sleep(2)
-    click_on_bluestacks(420, 922)
+    click_on_bluestacks(420,922)
     for digit in phone_number:
         if digit in number_to_coordinates:
             x, y = number_to_coordinates[digit]
             click_on_bluestacks(x, y)
             log(f"Tapped on digit {digit} at ({x}, {y})", "🖱️")
-            time.sleep(1)
-    click_on_bluestacks(395, 783)
+            time.sleep(1) 
+    click_on_bluestacks(395,783)
     time.sleep(5)
-    click_on_bluestacks(440, 198)
-    click_on_bluestacks(119, 923)
+    click_on_bluestacks(440,198)
+    click_on_bluestacks(119,923)
     time.sleep(3)
-    click_on_bluestacks(287, 564)
+    click_on_bluestacks(287,564)
 
-def start_audio_recording():
-    global recording_process
-    log("Starting audio recording in the background...", "🎙️")
-    recording_process = subprocess.Popen([adb_path, '-s', '127.0.0.1:5555', 'shell', 'screenrecord', '--output-format=mp4', '/sdcard/audio_recording.mp4'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-def stop_audio_recording():
-    global recording_process
-    log("Stopping audio recording...", "🛑")
-    if recording_process:
-        recording_process.terminate()
-        recording_process = None
-    project_path = os.path.dirname(os.path.realpath(__file__))
-    local_recording_path = os.path.join(project_path, 'audio_recording.mp4')
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'pull', '/sdcard/audio_recording.mp4', local_recording_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    log(f"Recording saved to {local_recording_path}", "✅")
-    local_audio_path = os.path.join(project_path, 'audio_recording.wav')
-    log("Extracting audio from video using pydub...", "🎧")
-    audio = AudioSegment.from_file(local_recording_path, format="mp4")
-    audio.export(local_audio_path, format="wav")
-    log(f"Audio extracted and saved to {local_audio_path}", "✅")
-    return local_audio_path
+def get_latest_file_in_directory(directory):
+    log(f"Finding the latest file in {directory}...", "🔍")
+    result = subprocess.run([adb_path, 'shell', f'ls -t {directory}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    files = result.stdout.splitlines()
+    if files:
+        latest_file = files[0].strip()
+        log(f"Latest file found: {latest_file}", "✅")
+        return latest_file
+    else:
+        log("No files found in the directory.", "❌")
+        return None
+
+def pull_audio_file():
+    directory = '/storage/emulated/0/Android/data/io.efon/files/Download/'
+    latest_file = get_latest_file_in_directory(directory)
+    if latest_file:
+        local_path = os.path.join(os.getcwd(), 'efon_audio_recording.mp3')
+        adb_remote_path = os.path.join(directory, latest_file)
+        subprocess.run([adb_path, 'pull', adb_remote_path, local_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if os.path.exists(local_path):
+            log(f"Audio file pulled successfully to {local_path}", "✅")
+            return local_path
+        else:
+            log("Failed to pull audio file.", "❌")
+            return None
+    else:
+        return None
+    
+
+def convert_mp3_to_wav(mp3_file):
+    wav_file = os.path.splitext(mp3_file)[0] + '.wav'
+    log(f"Converting {mp3_file} to {wav_file}...", "🔄")
+    result = subprocess.run(['ffmpeg', '-i', mp3_file, wav_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode == 0:
+        log(f"Conversion successful: {wav_file}", "✅")
+        return wav_file
+    else:
+        log(f"Failed to convert {mp3_file} to WAV.", "❌")
+        return None
 
 def convert_audio_to_text(audio_file_path):
     log(f"Converting {audio_file_path} to text...", "📝")
@@ -196,10 +226,16 @@ if __name__ == "__main__":
             log(f"Device found: {device}", "📱")
     else:
         log("No devices connected.", "❌")
-    connect_to_device()
-    open_efon_on_bluestacks()
-    audio_file_path = stop_audio_recording()
-    if audio_file_path:
-        text_output = convert_audio_to_text(audio_file_path)
-        if text_output:
-            log(f"Transcribed Text: {text_output}", "📝")
+
+    # open_efon_on_bluestacks()
+
+    # mp3_audio_file = pull_audio_file()
+    # if mp3_audio_file:
+    #     wav_audio_file = convert_mp3_to_wav(mp3_audio_file)
+    #     if wav_audio_file:
+    #         text_output = convert_audio_to_text(wav_audio_file)
+    #         if text_output:
+    #             log(f"Transcribed Text: {text_output}", "📝")
+
+    
+    open_telegram_on_bluestacks()
