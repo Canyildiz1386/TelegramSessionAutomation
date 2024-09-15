@@ -3,9 +3,29 @@ import time
 import speech_recognition as sr
 from datetime import datetime
 import os
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
 
-adb_path = r'C:\platform-tools\adb.exe'
+adb_path = r'C:\Users\Admin\Downloads\platform-tools-latest-windows\platform-tools\adb.exe'
 
+api_id = '23262291'
+api_hash = '77c460c8142ca13f32c27ac389db2e35'
+session_str = '+972556683729.session'  # The session string file
+
+
+def get_telegram_code():
+    with TelegramClient((session_str), api_id, api_hash) as client:
+        log("Logged in to Telegram", "✅")
+        
+        messages = client.get_messages(777000, limit=1)  
+        if messages:
+            code = messages[0].message
+            log(f"Telegram code received: {code}", "🔑")
+            return code
+        else:
+            log("No messages found from Telegram.", "❌")
+            return None
+        
 def log(message, emoji="ℹ️"):
     print(f"{emoji} {message}")
 
@@ -20,6 +40,7 @@ def get_adb_devices():
 def connect_to_device(ip="127.0.0.1:5555"):
 
     log(f"Connecting to device {ip}...", "📡")
+    result = subprocess.run([adb_path, 'disconnect', 'emulator-5554'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     result = subprocess.run([adb_path, 'connect', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if 'connected' in result.stdout:
         log(f"Successfully connected to {ip}", "✅")
@@ -58,10 +79,11 @@ def close_app(package_name):
     log(f"Closing {package_name} if it is running...", "🛑")
     subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'am', 'force-stop', package_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-def open_app_on_bluestacks(package_name, start_label=None):
+def open_app_on_bluestacks(package_name, start_label=None,closes_app=False):
     log(f"Launching {package_name} on BlueStacks...", "🚀")
-    close_app(package_name)
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'monkey', '-p', package_name, '-c', 'android.intent.category.LAUNCHER', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if closes_app == True:
+        close_app(package_name)
+    res=subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'monkey', '-p', package_name, '-c', 'android.intent.category.LAUNCHER', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     time.sleep(2)
     if start_label and check_for_label(start_label):
@@ -70,8 +92,16 @@ def open_app_on_bluestacks(package_name, start_label=None):
         time.sleep(3)
 
 def open_cyberghost_on_bluestacks():
-    open_app_on_bluestacks('de.mobileconcepts.cyberghost', 'Agree &')
-    time.sleep(30)
+    open_app_on_bluestacks('de.mobileconcepts.cyberghost')
+    time.sleep(5)
+    if check_for_label('Agree'):
+        click_on_bluestacks(421,722)
+        log("Clicked 'Agree'", "✅")
+
+    if check_for_label('could not'):
+        click_on_bluestacks(492,530)
+        log("Clicked 'Alert could not'", "✅")
+
     if check_for_label('Existing'):
         click_on_bluestacks(237, 737)
         log("Clicked 'Existing user?'", "✅")
@@ -85,29 +115,53 @@ def open_cyberghost_on_bluestacks():
         input_text_on_bluestacks('2Agujjlu!')
         log("Entered password", "🔑")
         click_on_bluestacks(285, 504)
-        time.sleep(40)
+        time.sleep(10)
 
     if check_for_label('OK'):
         click_on_bluestacks(283, 611)
         click_on_bluestacks(426, 593)
         log("Clicked 'OK' and proceeded", "✅")
-        time.sleep(40)
+        time.sleep(10)
         click_on_bluestacks(296, 364)
         click_on_bluestacks(433, 591)
+    change_ip('France')
     
-    if check_for_label("Connect to"):
+
+
+def change_ip(country,returning=False) :
+    open_app_on_bluestacks('de.mobileconcepts.cyberghost')
+    time.sleep(1)
+    get_ui_hierarchy()
+    if check_for_label('Best') or returning== True:
         click_on_bluestacks(282, 442)
         log("Clicked 'Connect to'", "✅")
-        time.sleep(30)
+        time.sleep(10)
         click_on_bluestacks(503, 54)
-        input_text_on_bluestacks('France')
-        log("Selected 'France' location", "🌍")
+        input_text_on_bluestacks(f'{country}')
+        time.sleep(10)
+        log(f"Selected '{country}' location", "🌍")
         click_on_bluestacks(177, 227)
-        time.sleep(40)
+        time.sleep(10)
         log("Connected to France", "🔒")
+    else:
+        
+        click_on_bluestacks(295,198)
+        time.sleep(5)
+        return change_ip(country,returning=True)
 
 def open_telegram_on_bluestacks():
-    open_app_on_bluestacks('org.telegram.messenger')
+    open_app_on_bluestacks('org.telegram.messenger.web')
+    if check_for_label('Start'):
+        click_on_bluestacks(255,845)
+    if check_for_label('Your phone') :
+        click_on_bluestacks(77,449)
+        input_text_on_bluestacks('972556683729')
+        click_on_bluestacks(491,684)
+        click_on_bluestacks(473,600)
+        telegram_code = get_telegram_code()
+
+        if telegram_code:
+            input_text_on_bluestacks(telegram_code)
     if check_for_label('My Story'):
         click_on_bluestacks(30,46)
         time.sleep(1)
@@ -220,22 +274,11 @@ def convert_audio_to_text(audio_file_path):
     return None
 
 if __name__ == "__main__":
-    devices = get_adb_devices()
-    if devices:
-        for device in devices:
-            log(f"Device found: {device}", "📱")
-    else:
-        log("No devices connected.", "❌")
 
-    # open_efon_on_bluestacks()
 
-    # mp3_audio_file = pull_audio_file()
-    # if mp3_audio_file:
-    #     wav_audio_file = convert_mp3_to_wav(mp3_audio_file)
-    #     if wav_audio_file:
-    #         text_output = convert_audio_to_text(wav_audio_file)
-    #         if text_output:
-    #             log(f"Transcribed Text: {text_output}", "📝")
+    # open_efon_on_bluestacks()    
+    #connect_to_device()
+    #open_telegram_on_bluestacks()
+    #change_ip('France')
+    get_telegram_code()
 
-    
-    open_telegram_on_bluestacks()
