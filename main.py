@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-
+from telethon.sessions import SQLiteSession
 adb_path = r'C:\Users\Admin\Downloads\platform-tools-latest-windows\platform-tools\adb.exe'
 
 api_id = '23262291'
@@ -14,7 +14,8 @@ session_str = '+972556683729.session'  # The session string file
 
 
 def get_telegram_code():
-    with TelegramClient((session_str), api_id, api_hash) as client:
+
+    with TelegramClient(SQLiteSession(session_str), api_id, api_hash,device_model="PC 64bit",system_version="Windows 11",) as client:
         log("Logged in to Telegram", "✅")
         
         messages = client.get_messages(777000, limit=1)  
@@ -37,7 +38,7 @@ def get_adb_devices():
     devices = [line for line in devices if line.strip()]
     return devices
 
-def connect_to_device(ip="127.0.0.1:5555"):
+def connect_to_device(ip="emulator-5554"):
 
     log(f"Connecting to device {ip}...", "📡")
     result = subprocess.run([adb_path, 'disconnect', 'emulator-5554'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -58,16 +59,16 @@ def check_for_label(label):
 
 def click_on_bluestacks(x, y):
     log(f"Clicking at position ({x}, {y})", "🖱️")
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'input', 'tap', str(x), str(y)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run([adb_path, '-s', 'emulator-5554', 'shell', 'input', 'tap', str(x), str(y)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 def input_text_on_bluestacks(text):
     log(f"Inputting text: {text}", "⌨️")
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'input', 'text', text], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run([adb_path, '-s', 'emulator-5554', 'shell', 'input', 'text', text], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 def get_ui_hierarchy():
     log("Dumping UI hierarchy...", "📄")
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'uiautomator', 'dump', '/sdcard/ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'pull', '/sdcard/ui.xml', './ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run([adb_path, '-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run([adb_path, '-s', 'emulator-5554', 'pull', '/sdcard/ui.xml', './ui.xml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         with open('ui.xml', 'r', encoding='utf-8') as file:
             return file.read()
@@ -77,13 +78,13 @@ def get_ui_hierarchy():
 
 def close_app(package_name):
     log(f"Closing {package_name} if it is running...", "🛑")
-    subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'am', 'force-stop', package_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run([adb_path, '-s', 'emulator-5554', 'shell', 'am', 'force-stop', package_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 def open_app_on_bluestacks(package_name, start_label=None,closes_app=False):
     log(f"Launching {package_name} on BlueStacks...", "🚀")
     if closes_app == True:
         close_app(package_name)
-    res=subprocess.run([adb_path, '-s', '127.0.0.1:5555', 'shell', 'monkey', '-p', package_name, '-c', 'android.intent.category.LAUNCHER', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    res=subprocess.run([adb_path, '-s', 'emulator-5554', 'shell', 'monkey', '-p', package_name, '-c', 'android.intent.category.LAUNCHER', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     time.sleep(2)
     if start_label and check_for_label(start_label):
@@ -177,8 +178,8 @@ def open_telegram_on_bluestacks():
 
 def open_efon_on_bluestacks():
 
-    open_app_on_bluestacks('io.efon', 'Start')
-    time.sleep(1)
+    open_app_on_bluestacks('io.efon', 'Start',closes_app=True)
+    time.sleep(2)
 
 
     input_text_on_bluestacks('+43650110000')
@@ -200,7 +201,7 @@ def open_efon_on_bluestacks():
         '#' : (395,783)
         
     }
-    time.sleep(7)
+    time.sleep(10)
     click_on_bluestacks(39,176)
     time.sleep(2)
     click_on_bluestacks(420,922)
@@ -216,6 +217,7 @@ def open_efon_on_bluestacks():
     click_on_bluestacks(119,923)
     time.sleep(3)
     click_on_bluestacks(287,564)
+
 
 
 def get_latest_file_in_directory(directory):
@@ -273,12 +275,14 @@ def convert_audio_to_text(audio_file_path):
         log(f"Could not request results from Google Speech Recognition service; {e}", "❌")
     return None
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
 
     # open_efon_on_bluestacks()    
     #connect_to_device()
     #open_telegram_on_bluestacks()
     #change_ip('France')
-    get_telegram_code()
+    #get_telegram_code()
+    #open_efon_on_bluestacks()
+    #open_telegram_on_bluestacks()
 
